@@ -45,12 +45,12 @@ if df_active.empty:
     st.success("✅ All areas are operating normally")
 
 else:
-    for _, row in df_active.iterrows():
+    for index, row in df_active.iterrows():
 
-        location = row["Location"]
-        status = row["Status"]
+        location = str(row["Location"]).strip()
+        status = str(row["Status"]).strip()
 
-        # 🔴 Fault → blinking heading
+        # 🔴 FAULT → blinking heading
         if status == "Fault":
             st.markdown(f"""
             <div class='blink'>⚠ {location}</div>
@@ -60,7 +60,7 @@ else:
                 f"{row['Feeder']} | {row['Reason']} | ETA: {row['ETA (hrs)']} hrs"
             )
 
-        # 🟡 Maintenance → normal heading
+        # 🟡 MAINTENANCE → normal heading
         else:
             st.markdown(f"### 📍 {location}")
 
