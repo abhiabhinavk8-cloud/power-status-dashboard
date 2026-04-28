@@ -30,8 +30,12 @@ header {visibility: hidden;}
 def load_data():
     url = "https://docs.google.com/spreadsheets/d/1fi9b3wtfoseQ--iCQgegLBT7s0SMPY59yus73g0xc18/export?format=csv"
     df = pd.read_csv(url)
+
+    # Clean all important columns
     df["State"] = df["State"].astype(str).str.strip()
     df["Status"] = df["Status"].astype(str).str.strip()
+    df["Location"] = df["Location"].astype(str).str.strip()
+
     return df
 
 df = load_data()
@@ -45,16 +49,17 @@ if df_active.empty:
     st.success("✅ All areas are operating normally")
 
 else:
-    for index, row in df_active.iterrows():
+    for i, row in df_active.iterrows():
 
-        location = str(row["Location"]).strip()
-        status = str(row["Status"]).strip()
+        location = row["Location"]
+        status = row["Status"]
 
-        # 🔴 FAULT → blinking heading
+        # 🔴 FAULT → blinking heading (UNIQUE KEY FIX)
         if status == "Fault":
-            st.markdown(f"""
-            <div class='blink'>⚠ {location}</div>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='blink'>⚠ {location}</div>",
+                unsafe_allow_html=True
+            )
 
             st.error(
                 f"{row['Feeder']} | {row['Reason']} | ETA: {row['ETA (hrs)']} hrs"
