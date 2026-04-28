@@ -1,66 +1,55 @@
 import streamlit as st
 import pandas as pd
-from streamlit_autorefresh import st_autorefresh
+import time
 
-# ---------------- CONFIG ----------------
-st.set_page_config(page_title="Power Status", layout="wide")
+st.set_page_config(page_title="Power Status", layout="centered")
 
-# Auto refresh every 10 sec
-st_autorefresh(interval=10000, key="refresh")
-
-# ---------------- HIDE STREAMLIT UI ----------------
+# -------- HIDE STREAMLIT UI --------
 st.markdown("""
 <style>
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
+
+.blink {
+  animation: blink 1s infinite;
+  color: red;
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HEADER ----------------
-st.markdown("""
-<div style="background-color:#0b3d91;padding:15px;border-radius:8px">
-    <h1 style="color:white;margin:0;">⚡ Electricity Board – Live Power Status</h1>
-    <p style="color:white;margin:0;">Real-time outage and maintenance updates</p>
-</div>
-""", unsafe_allow_html=True)
+# -------- LOAD DATA (CACHED) --------
+@st.cache_data(ttl=10)
+def load_data():
+    url = "https://docs.google.com/spreadsheets/d/1fi9b3wtfoseQ--iCQgegLBT7s0SMPY59yus73g0xc18/export?format=csv"
+    df = pd.read_csv(url)
+    df["State"] = df["State"].astype(str).str.strip()
+    df["Status"] = df["Status"].astype(str).str.strip()
+    return df
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ---------------- DATA ----------------
-url = "https://docs.google.com/spreadsheets/d/1fi9b3wtfoseQ--iCQgegLBT7s0SMPY59yus73g0xc18/export?format=csv"
-
-df = pd.read_csv(url)
-
-# Clean data (important)
-df["State"] = df["State"].astype(str).str.strip()
-df["Status"] = df["Status"].astype(str).str.strip()
-
-# Filter active
+df = load_data()
 df_active = df[df["State"] == "Active"]
 
-# ---------------- STATUS BANNER ----------------
+# -------- HEADER --------
+st.title("⚡ Live Power Status")
+
+# -------- MAIN DISPLAY --------
 if df_active.empty:
-    st.markdown("""
-    <div style="background-color:#28a745;padding:15px;border-radius:8px;text-align:center">
-        <h2 style="color:white;">✅ All areas are operating normally</h2>
-    </div>
-    """, unsafe_allow_html=True)
+    st.success("✅ All areas are operating normally")
+
 else:
-    st.markdown("""
-    <div style="background-color:#dc3545;padding:15px;border-radius:8px;text-align:center">
-        <h2 style="color:white;">⚠️ Power interruptions reported</h2>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ---------------- DISPLAY ----------------
-if not df_active.empty:
     locations = df_active["Location"].unique()
 
     for loc in locations:
-        st.markdown(f"### 📍 {loc}")
+
+        # 🔴 BLINKING LOCATION (MAIN REQUIREMENT)
+        st.markdown(f"<div class='blink'>⚠ {loc}</div>", unsafe_allow_html=True)
 
         loc_df = df_active[df_active["Location"] == loc]
 
@@ -68,17 +57,16 @@ if not df_active.empty:
 
             if row["Status"] == "Fault":
                 st.error(
-                    f"🔴 POWER OUTAGE – {row['Feeder']}\n\n"
-                    f"Reason: {row['Reason']}\n\n"
-                    f"ETA: {row['ETA (hrs)']} hrs"
+                    f"{row['Feeder']} | {row['Reason']} | ETA: {row['ETA (hrs)']} hrs"
                 )
             else:
                 st.warning(
-                    f"🟡 MAINTENANCE – {row['Feeder']}\n\n"
-                    f"Work: {row['Reason']}\n\n"
-                    f"ETA: {row['ETA (hrs)']} hrs"
+                    f"{row['Feeder']} | Maintenance | ETA: {row['ETA (hrs)']} hrs"
                 )
 
-# ---------------- FOOTER ----------------
-st.markdown("---")
-st.caption("Public information system • Updated automatically")
+# -------- FOOTER --------
+st.caption("Updated automatically")
+
+# -------- AUTO REFRESH --------
+time.sleep(10)
+st.rerun()
