@@ -45,34 +45,28 @@ if df_active.empty:
     st.success("✅ All areas are operating normally")
 
 else:
-    locations = df_active["Location"].unique()
+    for _, row in df_active.iterrows():
 
-    for loc in locations:
+        location = row["Location"]
+        status = row["Status"]
 
-        loc_df = df_active[df_active["Location"] == loc]
-
-        # Check if any fault exists in this location
-        has_fault = any(loc_df["Status"] == "Fault")
-
-        if has_fault:
-            # 🔴 Blinking LEFT heading
+        # 🔴 Fault → blinking heading
+        if status == "Fault":
             st.markdown(f"""
-            <div class='blink'>⚠ {loc}</div>
+            <div class='blink'>⚠ {location}</div>
             """, unsafe_allow_html=True)
+
+            st.error(
+                f"{row['Feeder']} | {row['Reason']} | ETA: {row['ETA (hrs)']} hrs"
+            )
+
+        # 🟡 Maintenance → normal heading
         else:
-            # 🟡 Normal LEFT heading
-            st.markdown(f"### 📍 {loc}")
+            st.markdown(f"### 📍 {location}")
 
-        for _, row in loc_df.iterrows():
-
-            if row["Status"] == "Fault":
-                st.error(
-                    f"{row['Feeder']} | {row['Reason']} | ETA: {row['ETA (hrs)']} hrs"
-                )
-            else:
-                st.warning(
-                    f"{row['Feeder']} | Maintenance | ETA: {row['ETA (hrs)']} hrs"
-                )
+            st.warning(
+                f"{row['Feeder']} | Maintenance | ETA: {row['ETA (hrs)']} hrs"
+            )
 
 # -------- FOOTER --------
 st.caption("Updated automatically")
