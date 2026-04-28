@@ -16,8 +16,9 @@ header {visibility: hidden;}
   color: red;
   font-size: 28px;
   font-weight: bold;
-  text-align: center;
+  text-align: left;
 }
+
 @keyframes blink {
   50% { opacity: 0; }
 }
@@ -48,10 +49,19 @@ else:
 
     for loc in locations:
 
-        # 🔴 BLINKING LOCATION (MAIN REQUIREMENT)
-        st.markdown(f"<div class='blink'>⚠ {loc}</div>", unsafe_allow_html=True)
-
         loc_df = df_active[df_active["Location"] == loc]
+
+        # Check if any fault exists in this location
+        has_fault = any(loc_df["Status"] == "Fault")
+
+        if has_fault:
+            # 🔴 Blinking LEFT heading
+            st.markdown(f"""
+            <div class='blink'>⚠ {loc}</div>
+            """, unsafe_allow_html=True)
+        else:
+            # 🟡 Normal LEFT heading
+            st.markdown(f"### 📍 {loc}")
 
         for _, row in loc_df.iterrows():
 
